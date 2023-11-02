@@ -1,0 +1,43 @@
+
+data_config: "/home/vin/Doctorat/dev/BioSoundNet/config/data_config.yaml"
+save_results: True #True
+
+###########
+## Paths ##
+###########
+predictions_dir: "/home/vin/Doctorat/dev/BioSoundNet/results/example/predictions"
+evaluation_dir: "/home/vin/Doctorat/dev/BioSoundNet/results/example/evaluation"
+
+evaluators_options:
+  draw_plots: False
+  plots: ["distances"]
+  phenology_databases: ["full_summer1"]
+
+evaluators:
+  - type: direct
+    activity_threshold: 0.5
+
+
+models_options:
+  model_dir: "/home/vin/Desktop/results/candidates_models"
+  inference: True
+  # spectrogram_overlap: 0.95
+  reclassify: True
+
+
+# model_ids:
+#   - "DLBDL_wr3_fil64_d1-512_d2-256_pps100_bs256"
+
+
+databases_options:
+  spectrogram:
+    win_length: 512
+    n_mels: 32
+    sample_rate: "original"
+
+
+databases:
+  - name: nips4b
+
+models:
+  - model_id : "DLBDL_wr3_fil64_d1-512_d2-256_pps100_bs256"

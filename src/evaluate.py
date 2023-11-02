@@ -1,0 +1,20 @@
+from biosoundnet.data.audio_data_handler import AudioDataHandler
+from biosoundnet.evaluation.song_detector_evaluation_handler import (
+    SongDetectorEvaluationHandler,
+)
+
+import pandas as pd
+import tensorflow as tf
+
+pd.options.mode.chained_assignment = "raise"
+
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+gpus = tf.config.experimental.list_physical_devices("GPU")
+tf.config.experimental.set_memory_growth(gpus[0], True)
+
+evaluator = SongDetectorEvaluationHandler(
+    opts_path="/home/vin/Doctorat/dev/biosoundnet/config/evaluation_config.yaml",
+    dh_class=AudioDataHandler,
+)
+
+res = evaluator.evaluate()

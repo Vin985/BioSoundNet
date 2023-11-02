@@ -1,0 +1,95 @@
+
+
+data_config: "src/training_data_config.yaml"
+
+model_dir: '/mnt/win/UMoncton/Doctorat/dev/dlbd/results/models/'
+
+suffix: "{databases_options--spectrogram--n_mels}"
+suffix_prepend:
+  databases_options--spectrogram--n_mels: _nmels-
+
+
+# name: "DLBDL"
+# class: dlbd.models.DLBD_lite.DLBDLite
+# suffix: "{version}"
+
+# # suffix_prepend:
+# #   default: ""
+# #   version: "_v"
+
+databases: ["arctic", "citynet"]
+
+model: 
+  max_epochs: 10
+  # from_epoch: 2
+  # from_version: 9
+  # from_epoch: 0
+  epoch_save_step: 1
+  learn_log: 0
+  do_augmentation: 1
+  A: 0.001 # biotic 
+  B: 10.0 #biotic
+  # # A: 0.025 # anthropic
+  # # B: 2.0 # anthropic
+  ensemble_members: 1
+  training_balanced: True
+  resize_spectrogram: True
+  pixels_per_sec: 60
+  spectrogram_overlap: .75
+  random_start: False
+
+net:
+  batch_size: 128
+  do_batch_norm: 1
+  hww_x: 30
+  hww_y: 30
+  spec_height: 64
+  channels: 4
+  num_filters: 128
+  num_dense_units: 512
+  conv_filter_width: 4
+  wiggle_room: 5
+  learning_rate: 0.001
+  dropout: 0.5
+
+logs:
+  log_dir: "logs/gradient_tape/"
+  use_version: True
+
+
+databases_options:
+  spectrogram:
+    n_fft: 2048
+    hop_length: 1024
+    n_mels: 32
+    sample_rate: "original"
+
+scenarios:
+  - name: "DLBDL"
+    class: dlbd.models.dlbd.DLBDLite
+  - name: "DLBDD"
+    class: dlbd.models.dlbd.DLBDDense
+
+
+# scenarios:
+#   - databases_options:
+#       spectrogram:
+#         n_mels: [32, 64, 128]
+#         hop_length: [512, 1024]
+
+# scenarios:
+#   - suffix: "{model--max_epochs}"
+#     suffix_prepend:
+#       model--max_epochs: _nepoch-
+#     databases_options:
+#       spectrogram:
+#           sample_rate: [22050, "original"]
+#       # databases:
+#       #   - name: "arctic"
+#       #     spectrogram:
+#       #       sample_rate: [22050, 16000]
+#       #   - name: "ciytnet_small"
+#       #     spectrogram:
+#       #       sample_rate: [22050, 16000]
+#     model:
+#       max_epochs: [1, 5]

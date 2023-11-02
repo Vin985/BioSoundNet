@@ -1,0 +1,158 @@
+
+data_config: "config/phenology/evaluation_data_config.yaml"
+save_results: True #True
+
+###########
+## Paths ##
+###########
+predictions_dir: "results/phenology/predictions"
+evaluation_dir: "results/phenology/evaluation"
+models_options:
+  spectrogram_overlap: 0.95
+  smooth_predictions: True
+  # repredict: True
+  # A: 0.05
+
+evaluators_options:
+  draw_plots: False
+  draw_global_plots: False
+  plots: ["distances", "pr_curve", "roc", "detected_tags", "overlap_duration", "overlap_duration_bar", "tag_repartition"] #"separate_distances", "roc"
+  phenology_databases: ["full_summer1", "ENAB"]
+
+
+id: standard_checked
+
+evaluators:
+  - type: "standard"
+    activity_threshold: 0.92
+    min_duration: 0.4
+    end_threshold: 0.5
+    dtc_threshold: 0
+    gtc_threshold: 0
+  # - type: "phenology"
+  #   method: "citynet"
+  #   activity_threshold: 0.7
+  #   scenarios:
+  #     remove_crows: [True, False]
+  - type: direct
+    activity_threshold: 0.7
+
+    # plots: ["separate_distances"]
+  # - type: phenology
+  #   method: standard
+  #   activity_threshold: 0.95
+  #   min_duration: 0.1
+  #   end_threshold: 0.1
+  #   daily_aggregation: "sum"
+  #   dtc_threshold: 0
+  #   gtc_threshold: 0
+
+# evaluators:
+  - type: "phenology"
+    method: "standard"
+    activity_threshold: 0.92
+    min_duration: 0.4
+    end_threshold: 0.5
+    dtc_threshold: 0
+    gtc_threshold: 0
+    daily_aggregation: "sum"
+  - type: standard
+    activity_threshold: 0.9
+    min_duration: 0.1
+    end_threshold: 0.5
+    dtc_threshold: 0
+    gtc_threshold: 0
+  # - type: standard
+  #   activity_threshold: 0.95
+  #   min_duration: 0.4
+  #   end_threshold: 0.6
+  #   dtc_threshold: 0
+  #   gtc_threshold: 0   
+
+
+  # - type: phenology
+  #   method: direct
+  #   activity_threshold: 0.7
+  #   scenarios:
+  #     refine_predictions: [False, True]
+
+
+  # - type: phenology
+  #   method: standard
+  #   activity_threshold: 0.90
+  #   min_duration: 0.1
+  #   end_threshold: 0.1
+  #   daily_aggregation: "sum"
+  #   dtc_threshold: 0
+  #   gtc_threshold: 0
+    # scenarios:
+    #   time_buffer:
+    #     start: 0.1
+    #     end: 1
+    #     step: 0.1
+
+
+  # - type: direct
+  #   activity_threshold: 0.7
+  #   threshold_by: 0.01
+  # - type: phenology
+  #   method: standard
+  #   activity_threshold: 0.9
+  #   min_duration: 0.1
+  #   end_threshold: 0.35
+  #   daily_aggregation: "sum"
+  # - type: standard
+  #   method: standard
+  #   activity_threshold: 0.9
+  #   min_duration: 0.1
+  #   end_threshold: 0.35
+  #   daily_aggregation: "sum"
+    # scenarios:
+    #   activity_threshold:
+    #     start: 0.9
+    #     end: 0.99
+    #     step: 0.01
+    #   min_duration: 0.1
+    #     # start: 0.1
+    #     # end: 0.3
+    #     # step: 0.1
+    #   end_threshold:
+    #     start: 0.1
+    #     end: 0.4
+    #     step: 0.05
+    # dtc_threshold: 0
+    # gtc_threshold: 0
+      
+  # - type: phenology
+  #   method: direct
+  #   scenarios:
+  #     activity_threshold: 
+  #       start: 0.3
+  #       end: 0.99
+  #       step: 0.1
+
+databases_options:
+  class_type: "biotic"
+  spectrogram:
+    n_mels: 32
+    n_fft: 512
+    sample_rate: "original"
+
+
+models_list_options:
+  model_dir: "../resources/models"
+  ignore_parent_path: True
+  batch_size: 64
+  scenarios:
+    spectrogram_overlap: 0.95
+
+model_ids:
+  - BioSoundNet
+
+
+
+
+
+databases:
+  - name: arctic_complete_final
+  - name: full_summer1

@@ -1,0 +1,49 @@
+Model: "DLBD"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ input_1 (InputLayer)        [(None, 32, 100)]         0         
+                                                                 
+ mask_spectrograms (MaskSpec  (None, 32, 100)          0         
+ trograms)                                                       
+                                                                 
+ Normalize_spectrograms (Nor  (None, 32, 100, 4)       0         
+ malizeSpectrograms)                                             
+                                                                 
+ conv2d (Conv2D)             (None, 11, 94, 64)        22592     
+                                                                 
+ batch_normalization (BatchN  (None, 11, 94, 64)       256       
+ ormalization)                                                   
+                                                                 
+ conv2d_1 (Conv2D)           (None, 11, 92, 64)        12352     
+                                                                 
+ batch_normalization_1 (Batc  (None, 11, 92, 64)       256       
+ hNormalization)                                                 
+                                                                 
+ pool2 (MaxPooling2D)        (None, 11, 1, 64)         0         
+                                                                 
+ batch_normalization_2 (Batc  (None, 11, 1, 64)        256       
+ hNormalization)                                                 
+                                                                 
+ tf.compat.v1.transpose (TFO  (None, 64, 1, 11)        0         
+ pLambda)                                                        
+                                                                 
+ pool2_flat (Flatten)        (None, 704)               0         
+                                                                 
+ dense (Dense)               (None, 512)               360960    
+                                                                 
+ batch_normalization_3 (Batc  (None, 512)              2048      
+ hNormalization)                                                 
+                                                                 
+ dense2 (Dense)              (None, 256)               131328    
+                                                                 
+ batch_normalization_4 (Batc  (None, 256)              1024      
+ hNormalization)                                                 
+                                                                 
+ fc8 (Dense)                 (None, 2)                 514       
+                                                                 
+=================================================================
+Total params: 531,586
+Trainable params: 529,666
+Non-trainable params: 1,920
+_________________________________________________________________

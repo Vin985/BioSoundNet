@@ -1,0 +1,11 @@
+numpy==1.19.2
+pandas
+librosa
+tqdm
+feather-format
+tensorflow
+tensorflow-io
+pyyaml
+pillow
+plotnine
+# pip install -U git+https://github.com/vin985/mouffet.git

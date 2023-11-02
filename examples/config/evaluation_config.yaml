@@ -1,0 +1,62 @@
+
+data_config: "config/data_config.yaml"
+save_results: True #True
+
+###########
+## Paths ##
+###########
+predictions_dir: "results/eval/predictions"
+evaluation_dir: "results/eval/evaluation"
+
+################
+## Evaluators ##
+################
+
+evaluators_options:
+  do_PR_curve: False
+  plots: "overlap_duration_bar; detected_tags"
+
+evaluators: 
+  - type: "standard"
+    activity_threshold: 0.92
+    min_duration: 0.4
+    end_threshold: 0.15
+    dtc_threshold: 0
+    gtc_threshold: 0
+  # - type: subsampling
+  #   sample_step: 1
+  #   activity_threshold: 0.6
+  - type: direct
+    activity_threshold: 0.6
+
+############
+## Models ##
+############
+models_options:
+  model_dir: "resources/models"
+  ignore_parent_path: True
+  batch_size: 32
+
+models:
+  - name: "BioSoundNet"
+    class: "biosoundnet.models.BioSoundNet"
+    scenarios:
+      spectrogram_overlap: [0.5, 0.75]
+
+###############
+## Databases ##
+###############
+
+# databases_options:
+#   class_type: "biotic"
+#   scenarios:
+#     spectrogram:
+#       n_mels: [64]
+#       sample_rate: ["original"]
+#       hop_length: [512]
+
+databases:
+  - name: ENAB
+  - name: full_summer1
+  - name: nips4b
+  - nambe: citynet

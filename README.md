@@ -1,6 +1,6 @@
 # BioSoundNet
 
-BioSoundNet is an acoustic bird vocalization detector based on deep learning. It is based on the [https://github.com/Vin985/mouffet](mouffet) framework that allow flexible training and evaluation of models with the use of scenarios.
+BioSoundNet is an acoustic bird vocalization detector based on deep learning. It is based on the [mouffet](https://github.com/Vin985/mouffet) framework that allow flexible training and evaluation of models with the use of scenarios.
 
 BioSoundNet comes with a pre-trained model and examples to easily use it. Also included is the code used to create the figures presented inside the paper (TBD).
 
@@ -64,8 +64,8 @@ Once this is done, you can install the mouffet package using this command:
 # Using BioSoundNet
 
 ## Generate predictions on a single audio file
-An example on how to use BioSoundNet to generate predictions on a single audio file can be found here: [./examples/predict_single.py](predict_single.py)
+An example on how to use BioSoundNet to generate predictions on a single audio file can be found here: [predict_single.py](examples/predict_single.py)
 
 ## Generate predictions on multiple audio files
-An example on how to use BioSoundNet to generate predictions on multiple audio files can be found here: [./examples/predict_multiple.py](predict_multiple.py)
+An example on how to use BioSoundNet to generate predictions on multiple audio files can be found here: [predict_multiple.py](examples/predict_multiple.py)
 

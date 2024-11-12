@@ -64,8 +64,8 @@ Once this is done, you can install the mouffet package using this command:
 # Using BioSoundNet
 
 ## Generate predictions on a single audio file
-An example on how to use BioSoundNet to generate predictions on a single audio file can be found here: [examples/predict_single.py](predict_single.py)
+An example on how to use BioSoundNet to generate predictions on a single audio file can be found here: [./examples/predict_single.py](predict_single.py)
 
 ## Generate predictions on multiple audio files
-An example on how to use BioSoundNet to generate predictions on multiple audio files can be found here: [examples/predict_multiple.py](predict_multiple.py)
+An example on how to use BioSoundNet to generate predictions on multiple audio files can be found here: [./examples/predict_multiple.py](predict_multiple.py)
 

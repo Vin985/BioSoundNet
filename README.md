@@ -59,3 +59,13 @@ If this is the first time you use python, you will probably need to update pip. 
 Once this is done, you can install the mouffet package using this command:
 
     pip install -U git+https://github.com/vin985/biosoundnet.git
+
+
+# Using BioSoundNet
+
+## Generate predictions on a single audio file
+An example on how to use BioSoundNet to generate predictions on a single audio file can be found here: [examples/predict_single.py](predict_single.py)
+
+## Generate predictions on multiple audio files
+An example on how to use BioSoundNet to generate predictions on multiple audio files can be found here: [examples/predict_multiple.py](predict_multiple.py)
+

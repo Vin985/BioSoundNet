@@ -1,30 +1,28 @@
-from cmath import nan
 import math
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from mouffet import common_utils
 from mouffet.evaluation import Evaluator
-from sklearn import metrics
-
 from plotnine import (
     aes,
-    element_text,
-    xlim,
-    ylim,
     annotate,
+    element_text,
     geom_line,
     ggplot,
     ggtitle,
     theme,
     theme_classic,
     xlab,
+    xlim,
     ylab,
+    ylim,
 )
+from sklearn import metrics
 
 
 class DirectEvaluator(Evaluator):
-
     NAME = "direct"
 
     REQUIRES = ["tags_df"]
@@ -92,7 +90,7 @@ class DirectEvaluator(Evaluator):
         predictions["events"] = 0
         predictions["tags"] = 0
         threshold = options.get("activity_threshold", self.DEFAULT_ACTIVITY_THRESHOLD)
-        predictions.loc[predictions.activity > threshold, "events"] = 2
+        predictions.loc[predictions.activity > threshold, "events"] = 1
         if tags is not None and not tags.empty:
             events = predictions.groupby("recording_id", as_index=True, observed=True)
             predictions = events.apply(self.get_tags_presence, tags, options)
@@ -118,34 +116,69 @@ class DirectEvaluator(Evaluator):
         return predictions
 
     def calculate_stats(self, predictions, options):
-        res = predictions.tags + predictions.events
+        res = predictions.tags + predictions.events * 2
 
         n_true_positives = len(res[res == 3])
         n_true_negatives = len(res[res == 0])
         n_false_positives = len(res[res == 2])
         n_false_negatives = len(res[res == 1])
+        n_negative = n_true_negatives + n_false_positives
+        n_positive = n_true_positives + n_false_negatives
 
-        intersection = predictions.tags * predictions.events  # Logical AND
-        union = predictions.tags + predictions.events
+        recall = round(metrics.recall_score(predictions.tags, predictions.events), 3)
+        precision = round(
+            metrics.precision_score(predictions.tags, predictions.events), 3
+        )
+        f1_score = round(metrics.f1_score(predictions.tags, predictions.events), 3)
+        specificity = round(n_true_negatives / n_negative, 3)
 
-        iou = round(intersection.sum() / float(union.sum()), 3)
+        # intersection = predictions.tags * (predictions.events *2)  # Logical AND
+        # union = predictions.tags + predictions.events
+
+        # iou = round(intersection.sum() / float(union.sum()), 3)
+
+        iou = round(
+            n_true_positives
+            / (n_true_positives + n_false_negatives + n_false_positives),
+            3,
+        )
 
         unbalanced_accuracy = round(
             (float(n_true_positives + n_true_negatives) / predictions.shape[0]), 3
         )
 
-        A = float(n_true_positives) / (n_true_positives + n_false_negatives)
-        B = float(n_true_negatives) / (n_false_positives + n_true_negatives)
-        balanced_accuracy = round((A + B) / 2.0, 3)
+        balanced_accuracy = round((recall + specificity) / 2.0, 3)
 
-        precision = round(n_true_positives / (n_true_positives + n_false_positives), 3)
-        recall = round(n_true_positives / (n_true_positives + n_false_negatives), 3)
-        f1_score = round(2 * precision * recall / (precision + recall), 3)
+        # if predictions.tags.sum() == 0:
+        #     recall = 0
+        #     precision = 0
+        #     f1_score = 0
+
+        # elif predictions.tags.sum() == len(predictions.tags):
+        #     recall = 1
+        #     precision = 1
+        #     f1_score = 1
+        #     specificity = 0
+        # else:
+        #     balanced_accuracy = round((recall + specificity) / 2.0, 3)
+
+        #     precision = round(
+        #         n_true_positives / (n_true_positives + n_false_positives), 3
+        #     )
+        #     recall = round(n_true_positives / (n_true_positives + n_false_negatives), 3)
+        #     f1_score = round(2 * precision * recall / (precision + recall), 3)
+
+        # specificity = n_true_negatives / (n_true_negatives + n_true_positives)
 
         average_precision = round(
             metrics.average_precision_score(predictions.tags, predictions.activity), 3
         )
-        auc = round(metrics.roc_auc_score(predictions.tags, predictions.activity), 3)
+        if n_positive > 0 and n_negative > 0:
+            auc = round(
+                metrics.roc_auc_score(predictions.tags, predictions.activity), 3
+            )
+        else:
+            auc = np.nan
 
         stats = {
             "activity_threshold": options.get(
@@ -160,24 +193,26 @@ class DirectEvaluator(Evaluator):
             "average_precision": average_precision,
             "precision": precision,
             "recall": recall,
+            "specificity": specificity,
             "f1_score": f1_score,
             "auc": auc,
             "ap": average_precision,
             "IoU": iou,
         }
-
-        common_utils.print_warning(
-            f'Precision: { stats["precision"]};'
-            + f' Recall: {stats["recall"]};'
-            + f' F1_score: {stats["f1_score"]};'
-            + f' AUC: {stats["auc"]};'
-            + f' Average precision: {stats["ap"]};'
-            + f' IoU: {stats["IoU"]}'
-        )
-        return pd.DataFrame([stats])  # , predictions
+        if not options.get("stat_trend", False):
+            common_utils.print_warning(
+                f'Precision: { stats["precision"]};'
+                + f' Recall: {stats["recall"]};'
+                + f' Specificity: {stats["specificity"]};'
+                + f' F1_score: {stats["f1_score"]};'
+                + f' AUC: {stats["auc"]};'
+                + f' Average precision: {stats["ap"]};'
+                + f' IoU: {stats["IoU"]}'
+            )
+            return pd.DataFrame([stats])  # , predictions
+        return pd.Series(stats)
 
     def get_stats(self, predictions, options):
-
         predictions.activity = predictions.activity.fillna(0)
 
         print("Stats for options {0}:".format(options))

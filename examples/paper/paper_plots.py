@@ -1,21 +1,22 @@
-#%%
+# %%
 from pathlib import Path
+
 import pandas as pd
 import patchworklib as pw
 from biosoundnet.applications.phenology.phenology_evaluator import PhenologyEvaluator
-from dlbiosoundnetbd.data.audio_data_handler import AudioDataHandler
+from biosoundnet.data.audio_data_handler import AudioDataHandler
 from biosoundnet.evaluation import EVALUATORS
 from biosoundnet.evaluation.song_detector_evaluation_handler import (
     SongDetectorEvaluationHandler,
 )
-from dlbbiosoundnetd.plots.distance import plot_norm_distance
-from dlbiosoundnetbd.plots.utils import format_date_short
+from biosoundnet.plots.distance import plot_norm_distance
+from biosoundnet.plots.utils import format_date_short
 from mouffet.utils import common_utils, config_utils, file_utils
 from plotnine import *
 
 EVALUATORS.register_evaluator(PhenologyEvaluator)
 
-#%%
+# %%
 
 
 cbbPalette = [
@@ -30,7 +31,7 @@ cbbPalette = [
 ]
 
 
-models_dir = "/mnt/win/UMoncton/Doctorat/dev/phenol1/resources/models"
+models_dir = "/mnt/win/UMoncton/Doctorat/dev/BioSoundNet/resources/models"
 
 evaluation_config_path = "config/paper_plots_config.yaml"
 
@@ -44,7 +45,8 @@ evaluation_config = config_utils.get_models_conf(
     evaluation_config,
 )
 
-#%%
+
+# %%
 
 # * ARCTIC SUMMER
 
@@ -69,7 +71,7 @@ evaluator = SongDetectorEvaluationHandler(
 )
 
 stats = evaluator.evaluate()
-#%%
+# %%
 
 nrow = 0
 scenario = stats["stats"].iloc[nrow]
@@ -108,11 +110,11 @@ full_summer_plt = (
         plot_margin=0.05,
     )
 )
-#%%
+# %%
 fs_plt = pw.load_ggplot(full_summer_plt)
 
 
-#%%
+# %%
 
 
 # * ENAB
@@ -137,7 +139,7 @@ evaluator = SongDetectorEvaluationHandler(opts=enab_opts, dh_class=AudioDataHand
 
 stats = evaluator.evaluate()
 
-#%%
+# %%
 
 crow_row = 0
 crows = stats["stats"].iloc[crow_row]
@@ -156,7 +158,7 @@ enab_df = pd.concat(
 
 enab_df.type = enab_df.type.astype("category")
 enab_df.type = enab_df.loc[:, "type"].cat.reorder_categories(
-    ["ground_truth", "no_crows", "DLBD_v2"]
+    ["ground_truth", "no_crows", "BioSoundNet"]
 )
 
 
@@ -198,7 +200,7 @@ enab_plt = (
         plot_margin=0.05,
     )
 )
-#%%
+# %%
 
 e_plt = pw.load_ggplot(enab_plt)
 fs_plt.set_index("A)")
@@ -208,10 +210,10 @@ e_plt.set_index("B)")
 final = fs_plt | e_plt
 
 final.savefig(
-    "/mnt/win/UMoncton/Doctorat/work/Articles/biosoundnet/figures/phenology_check.png"
+    "/mnt/win/UMoncton/Doctorat/work/Articles/biosoundnet/figures/phenology_check2.png"
 )
 
-#%%
+# %%
 
 # # * MULTIPLE THRESHOLDS
 
@@ -235,7 +237,7 @@ evaluator = SongDetectorEvaluationHandler(
 )
 
 stats = evaluator.evaluate()
-#%%
+# %%
 
 tmp_dfs = []
 gt_df = None
@@ -255,7 +257,7 @@ all_trends.threshold = all_trends.threshold.astype("category")
 print(all_trends)
 
 
-#%%
+# %%
 
 thresh_plt = (
     ggplot(
@@ -281,7 +283,7 @@ thresh_plt = (
 )
 thresh_plt
 
-#%%
+# %%
 
 thresh_norm_plt = (
     ggplot(
@@ -309,7 +311,7 @@ thresh_norm_plt = (
 )
 thresh_norm_plt
 
-#%%
+# %%
 
 th_plt = pw.load_ggplot(thresh_plt)
 thn_plt = pw.load_ggplot(thresh_norm_plt)
@@ -323,7 +325,88 @@ final.savefig(
     "/mnt/win/UMoncton/Doctorat/work/Articles/biosoundnet/figures/threshold_comparison.png"
 )
 
-#%%
+
+# %% F1 Score thresholds plots
+
+for metric in PhenologyEvaluator.TREND_METRICS:
+    tmp_dfs = []
+    for nrow in range(0, stats["stats"].shape[0]):
+        scenario = stats["stats"].iloc[nrow]
+        # print(scenario)
+        trends_df = stats["metric_trends_df"][nrow]["trends_df"]
+        print(trends_df)
+        trends_df = trends_df[trends_df["type"] == metric]
+
+        trends_df.loc[:, "threshold"] = scenario.activity_threshold
+        tmp_dfs.append(trends_df)
+
+    # tmp_dfs.append(gt_df)
+    all_trends = pd.concat(tmp_dfs)
+    all_trends.threshold = all_trends.threshold.astype("category")
+
+    metric_thresh_plt = (
+        ggplot(
+            data=all_trends,
+            mapping=aes("date", "trend", color="threshold"),
+        )
+        + geom_line()
+        # + ggtitle(plot_args.get("title", ""))
+        + xlab("Date")
+        + ylab(metric)
+        # + scale_color_discrete(labels=["Model", "Reference"])
+        + scale_x_datetime(labels=format_date_short)
+        + scale_color_manual(values=cbbPalette, guide=None)
+        + theme_classic()
+        + theme(
+            axis_title=element_text(size=12, ha="center", va="center"),
+            axis_text_x=element_text(angle=45),
+            figure_size=(3.5, 2.5),
+            dpi=300,
+            plot_margin=0.05,
+        )
+    )
+    metric_thresh_plt
+    # f1score_thresh_plt.save("f1_thresh_plot.png")
+
+    metric_thresh_norm_plt = (
+        ggplot(
+            data=all_trends,
+            mapping=aes("date", "trend_norm", color="threshold"),
+        )
+        + geom_line()
+        # + ggtitle(plot_args.get("title", ""))
+        + xlab("Date")
+        + ylab(metric)
+        # + labs(linetype="Threshold")
+        + scale_color_manual(values=cbbPalette, name="Threshold")
+        # + scale_color_discrete(labels=["Model", "Reference"])
+        + scale_x_datetime(labels=format_date_short)
+        + theme_classic()
+        + theme(
+            axis_title=element_text(size=12, ha="center", va="center"),
+            axis_text_x=element_text(angle=45),
+            figure_size=(3.5, 2.5),
+            dpi=300,
+            legend_text=element_text(size=12),
+            # plot_margin=0.05,
+        )
+    )
+    metric_thresh_norm_plt
+    # f1score_thresh_norm_plt.save("f1_thresh_norm_plot.png")
+
+    f1_th_plt = pw.load_ggplot(metric_thresh_plt)
+    f1_thn_plt = pw.load_ggplot(metric_thresh_norm_plt)
+    f1_th_plt.set_index("A)")
+    f1_thn_plt.set_index("B)")
+
+    f1_final = f1_th_plt | f1_thn_plt
+
+    f1_final.savefig(
+        f"/mnt/win/UMoncton/Doctorat/work/Articles/BioSoundNet/figures/{metric}_threshold_comparison.png"
+    )
+
+
+# %%
 
 tags_df = evaluator.data_handler.load_dataset(
     "test",
@@ -366,7 +449,7 @@ else:
         file_utils.ensure_path_exists(unmatched_path, is_file=True)
     )
 
-#%%
+# %%
 
 unmatched_stats = unmatched.groupby("activity_threshold").agg(
     {"tag_duration": ["mean", "std"]}

@@ -1,4 +1,4 @@
-#%%
+# %%
 
 from pathlib import Path
 
@@ -6,9 +6,9 @@ import mouffet.utils.file as file_utils
 import pandas as pd
 from biosoundnet.data.audio_data_handler import AudioDataHandler
 
-summaries_root = Path("/home/vin/Doctorat/dev/biosoundnet/results/summaries")
+summaries_root = Path("/home/vin/Doctorat/dev/BioSoundNet/results/summaries")
 
-opts_path = Path("/home/vin/Doctorat/dev/biosoundnet/examples/config/data_config.yaml")
+opts_path = Path("/home/vin/Doctorat/dev/BioSoundNet/examples/config/data_config.yaml")
 
 opts = file_utils.load_config(opts_path)
 opts["tags"]["filter_classes"] = False
@@ -20,14 +20,15 @@ else:
 
 dh = AudioDataHandler(opts)
 
-#%%
+# %%
 
 res = dh.get_summaries(load_opts={"file_types": ["metadata", "tags_df"]})
 
 
-#%%
+# %%
 all_tags = []
 datasets = []
+all_classes = []
 
 for db, summary in res.items():
     for db_type, values in summary.items():
@@ -38,6 +39,9 @@ for db, summary in res.items():
             is_file=True,
         )
         classes_summary.to_csv(file_path)
+        classes_summary["database"] = db
+        classes_summary["type"] = db_type
+        all_classes.append(classes_summary)
         values.pop("raw_df")
         values["database"] = db
         values["type"] = db_type
@@ -49,3 +53,10 @@ res_path = file_utils.ensure_path_exists(
     is_file=True,
 )
 res.to_csv(res_path)
+
+all_classes_res = pd.concat(all_classes)
+classes_path = file_utils.ensure_path_exists(
+    summaries_root / ("all_classes_summary_" + class_type + ".csv"),
+    is_file=True,
+)
+all_classes_res.to_csv(classes_path)

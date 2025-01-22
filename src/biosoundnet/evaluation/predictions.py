@@ -3,13 +3,12 @@ import time
 import traceback
 from pathlib import Path
 
+import mouffet.utils.common as common_utils
 import numpy as np
 import pandas as pd
 
 from ..data import audio_utils
 from ..training import SpectrogramSampler
-
-import mouffet.utils.common as common_utils
 
 # import tracemalloc
 
@@ -34,6 +33,8 @@ def classify_elements(elements, model, spec_opts=None):
     dur = 0
 
     # * Timing statistics
+    load_times = []
+    preprocess_times = []
     classify_times = []
     classify_times_pm = []
     total_times = []
@@ -45,6 +46,8 @@ def classify_elements(elements, model, spec_opts=None):
         print("Classifying element {}/{}".format(i, len(elements)))
         try:
             start_file = time.time()
+            preprocess_start = time.time()
+            load_start = time.time()
             if isinstance(element, Path) or isinstance(element, str):
                 to_load = True
                 if not spec_opts:
@@ -59,6 +62,7 @@ def classify_elements(elements, model, spec_opts=None):
                     (spec, metadata, _) = audio_utils.load_audio_data(
                         element, spec_opts
                     )
+
                 except Exception:
                     common_utils.print_error(traceback.format_exc())
                     with open("loading_error.log", "a", encoding="utf8") as error_log:
@@ -68,6 +72,7 @@ def classify_elements(elements, model, spec_opts=None):
             else:
                 spec, metadata = element
 
+            load_time = load_start - time.time()
             duration = metadata["duration"]
             total_audio_duration += duration
             if duration < min_duration:
@@ -99,6 +104,7 @@ def classify_elements(elements, model, spec_opts=None):
                         model.opts.get("pixels_per_second", 100), duration
                     ),
                 )
+            preprocess_time = time.time() - preprocess_start
             start_classify = time.time()
             res_df = classify_element(model, (to_classify, metadata), test_sampler)
             classify_time = time.time() - start_classify
@@ -112,6 +118,8 @@ def classify_elements(elements, model, spec_opts=None):
             classify_prop = classify_time / total_time
             print(f"File done in {total_time}")
 
+            load_times.append(load_time)
+            preprocess_times.append(preprocess_time)
             classify_times.append(classify_time)
             classify_times_pm.append(classify_time_pm)
             total_times.append(total_time)
@@ -145,9 +153,8 @@ def classify_elements(elements, model, spec_opts=None):
         np.mean(classify_times_pm), 2
     )
     infos["average_total_time"] = round(np.mean(total_times), 2)
-    infos["average_loading_time"] = round(
-        infos["average_total_time"] - infos["average_classification_time"], 2
-    )
+    infos["average_loading_time"] = round(round(np.mean(load_times)), 2)
+    infos["average_preprocessing_time"] = round(round(np.mean(preprocess_times)), 2)
     infos["average_classify_prop"] = round(np.mean(classify_props), 2)
 
     preds = pd.concat(res)
@@ -168,3 +175,11 @@ def classify_element(model, data, sampler):
         }
     )
     return res_df
+
+
+def smooth_predictions(preds, model_opts):
+    factor = model_opts.get("smooth_factor", 3)
+    if factor:
+        roll = preds["activity"].rolling(factor, center=True)
+        preds.loc[:, "activity"] = roll.mean()
+    return preds

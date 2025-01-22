@@ -7,16 +7,17 @@ from pandas_path import path  # pylint: disable=unused-import
 from plotnine import *
 from scipy.spatial.distance import euclidean
 
-from ...evaluation import EVALUATORS
 from ...data.tag_utils import flatten_tags
+from ...evaluation import EVALUATORS
 from ...plots.distance import plot_distances
 
 
 class PhenologyEvaluator(Evaluator):
-
     NAME = "phenology"
 
     PLOTS = {"distances": plot_distances}
+
+    TREND_METRICS = ["f1_score", "precision", "recall", "specificity"]
 
     def requires(self, options):
         return EVALUATORS[options["method"]].requires(options)
@@ -36,11 +37,11 @@ class PhenologyEvaluator(Evaluator):
         return df["event_duration"].mean()
 
     def extract_recording_info_biosoundnet(self, df, options):
-        df[
-            ["site", "plot", "date", "time", "to_drop"]
-        ] = df.recording_id.path.stem.str.split("_", expand=True)
+        df[["site", "plot", "date", "hour_time", "to_drop"]] = (
+            df.recording_id.path.stem.str.split("_", expand=True)
+        )
         df = df.assign(
-            full_date=[str(x) + "_" + y for x, y in zip(df["date"], df["time"])]
+            full_date=[str(x) + "_" + y for x, y in zip(df["date"], df["hour_time"])]
         )
         df["full_date"] = pd.to_datetime(df["full_date"], format="%Y-%m-%d_%H%M%S")
         df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d")
@@ -73,12 +74,11 @@ class PhenologyEvaluator(Evaluator):
         )
         return df
 
-    def get_rolling_trends(self, df, options, df_type, default_period=7):
-        res = {}
+    def get_rolling_trends(
+        self, df, options, df_type, default_period=7, column="total_duration"
+    ):
         tmp = df.copy()
-        roll = tmp["total_duration"].rolling(
-            options.get("period", default_period), center=True
-        )
+        roll = tmp[column].rolling(options.get("period", default_period), center=True)
 
         tmp.loc[:, "trend"] = roll.mean()
         tmp.loc[:, "trend_std"] = roll.std()
@@ -89,14 +89,14 @@ class PhenologyEvaluator(Evaluator):
 
         if df_type == "tag":
             tmp.loc[:, "type"] = "ground_truth"
+        elif df_type in self.TREND_METRICS:
+            tmp.loc[:, "type"] = df_type
         elif options.get("scenario_info"):
             tmp.loc[:, "type"] = options["scenario_info"]["model"]
         else:
             tmp.loc[:, "type"] = options.get("plot", "unknown_plot")
 
-        res["trends_df"] = tmp.reset_index()
-
-        return res
+        return tmp.reset_index()
 
     def get_daily_trends(self, df, options, df_type="event"):
         res = {}
@@ -143,7 +143,7 @@ class PhenologyEvaluator(Evaluator):
 
         trends = self.get_rolling_trends(daily_duration, options, df_type)
 
-        res.update(trends)
+        res["trends_df"] = trends
 
         return res
 
@@ -180,64 +180,71 @@ class PhenologyEvaluator(Evaluator):
 
         return res
 
+    def get_metric_trends(self, df, options, df_type):
+        res = {}
+
+        method = options["method"]
+        options["stat_trend"] = True
+
+        # file_song_duration = (
+        #     df.groupby("recording_id")
+        #     .apply(EVALUATORS[method].get_stats, options)
+        #     .reset_index()
+        #     .rename(columns={0: "total_duration"})
+        # )
+
+        tmp_df = getattr(
+            self,
+            "extract_recording_info_"
+            + options.get("recording_info_type", "biosoundnet"),
+        )(df, options=options)
+
+        if "depl_start" in options:
+            tmp_df = tmp_df.loc[tmp_df.date_hour >= options["depl_start"]]
+        if "depl_end" in options:
+            tmp_df = tmp_df.loc[tmp_df.date_hour <= options["depl_end"]]
+
+        res["df"] = tmp_df
+
+        # agg_method = options.get("daily_aggregation", "sum")
+
+        by_day = tmp_df.groupby("date").apply(
+            EVALUATORS[method].calculate_stats, options
+        )
+        by_day = by_day.asfreq("D", fill_value=0)
+
+        # daily_duration = by_hour.resample("D").agg(agg_method)
+        by_day.index.name = "date"
+
+        metrics = options.get("trend_metrics", self.TREND_METRICS)
+        tmp_trends = []
+        for metric in metrics:
+            tmp_trends.append(
+                self.get_rolling_trends(
+                    by_day[[metric, "activity_threshold"]],
+                    options,
+                    metric,
+                    column=metric,
+                )
+            )
+
+        trends = pd.concat(tmp_trends)
+        res["trends_df"] = trends
+        # res.update(trends)
+
+        return res
+
     def get_trends(self, data, infos, options, df_type):
         db = infos["database"]
-        activity_func_name = "get_" + db + "_trends"
-        if not hasattr(self, activity_func_name):
+        db_func_name = "get_" + db + "_trends"
+        type_func_name = "get_" + df_type + "_trends"
+        if hasattr(self, db_func_name):
+            activity_func_name = db_func_name
+        elif hasattr(self, type_func_name):
+            activity_func_name = type_func_name
+        else:
             activity_func_name = "get_daily_trends"
         return getattr(self, activity_func_name)(data, options, df_type)
-
-    # def plot_distances(self, data, options, infos):
-    #     plt_df = data["df"]
-    #     res = []
-    #     if options.get("plot_real_distance", True):
-    #         tmp_plt = (
-    #             ggplot(
-    #                 data=plt_df,
-    #                 mapping=aes("date", "trend", color="type"),
-    #             )
-    #             + geom_line()
-    #             + ggtitle(
-    #                 "Daily mean activity per recording with method {}.\n".format(
-    #                     options["method"]
-    #                 )
-    #                 + " Euclidean distance to reference: {}".format(data["distance"])
-    #             )
-    #             + xlab("Date")
-    #             + ylab("Daily mean activity per recording (s)")
-    #             + scale_color_discrete(labels=["Reference", "Model"])
-    #             + scale_x_datetime(labels=format_date_short)
-    #             + theme_classic()
-    #             + theme(axis_text_x=element_text(angle=45))
-    #         )
-    #         if options.get("add_points", False):
-    #             tmp_plt = tmp_plt + geom_point(mapping=aes(y="total_duration"))
-    #         res.append(tmp_plt)
-    #     if options.get("plot_norm_distance", True):
-    #         tmp_plt_norm = (
-    #             ggplot(
-    #                 data=plt_df,
-    #                 mapping=aes("date", "trend_norm", color="type"),
-    #             )
-    #             + geom_line()
-    #             + ggtitle(
-    #                 "Normalized daily mean activity per recording with method {}.\n".format(
-    #                     options["method"]
-    #                 )
-    #                 + " Euclidean distance to reference: {}".format(
-    #                     data["distance_norm"]
-    #                 )
-    #             )
-    #             + xlab("Date")
-    #             + ylab("Normalized daily mean activity per recording")
-    #             + scale_color_discrete(labels=["Model", "Reference"])
-    #             + scale_x_datetime(labels=format_date_short)
-    #             + theme_classic()
-    #             + theme(axis_text_x=element_text(angle=45))
-    #         )
-    #         res.append(tmp_plt_norm)
-
-    #     return res
 
     def evaluate(self, data, options, infos):
         if not self.check_database(data, options, infos):
@@ -249,6 +256,8 @@ class PhenologyEvaluator(Evaluator):
 
         tags_trends = self.get_trends(data[1]["tags_df"], infos, options, "tag")
         events_trends = self.get_trends(matches, infos, options, "event")
+
+        metrics_trends = self.get_trends(matches, infos, options, "metric")
 
         trends = pd.concat(
             [
@@ -284,7 +293,8 @@ class PhenologyEvaluator(Evaluator):
 
         stats["stats"].loc[:, "eucl_distance"] = eucl_distance
         stats["stats"].loc[:, "eucl_distance_norm"] = eucl_distance_norm
-        stats["trends_df"] = {"trends_df": trends}
+        stats["trends_df"] = trends
+        stats["metric_trends_df"] = metrics_trends
         # stats["tags_trends"] = tags_trends
         # stats["events_duration"] = events_trends
 

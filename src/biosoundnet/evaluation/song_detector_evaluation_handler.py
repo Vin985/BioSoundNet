@@ -5,7 +5,6 @@ from . import predictions
 
 
 class SongDetectorEvaluationHandler(EvaluationHandler):
-
     DATA_HANDLER_CLASS = AudioDataHandler
     PREDICTIONS_STATS_DUPLICATE_COLUMNS = [
         "database",
@@ -14,7 +13,6 @@ class SongDetectorEvaluationHandler(EvaluationHandler):
     ]
 
     def predict_database(self, model, database, db_type="test"):
-
         db = self.data_handler.load_dataset(
             db_type,
             database,
@@ -36,18 +34,11 @@ class SongDetectorEvaluationHandler(EvaluationHandler):
         ).get_spectrogram_subfolder_path()
         return preds_dir
 
-    def smooth_predictions(self, preds, model_opts):
-        factor = model_opts.get("smooth_factor", 5)
-        if factor:
-            roll = preds["activity"].rolling(factor, center=True)
-            preds.loc[:, "activity"] = roll.mean()
-        return preds
-
     def on_get_predictions_end(self, preds, model_opts):
         preds = preds.rename(columns={"recording_path": "recording_id"})
         if model_opts.get("smooth_predictions", False):
             preds = preds.groupby("recording_id").apply(
-                self.smooth_predictions, model_opts
+                predictions.smooth_predictions, model_opts
             )
         return preds
 

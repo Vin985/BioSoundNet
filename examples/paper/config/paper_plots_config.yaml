@@ -33,10 +33,10 @@ evaluators:
       remove_crows: [True, False]
 
 
-models_list_dir:  "/mnt/win/UMoncton/Doctorat/dev/phenol1/resources/models"
+models_list_dir:  "/mnt/win/UMoncton/Doctorat/dev/BioSoundNet/resources/models"
 
 models_list_options:
-  model_dir:  "/mnt/win/UMoncton/Doctorat/dev/phenol1/resources/models"
+  model_dir:  "/mnt/win/UMoncton/Doctorat/dev/BioSoundNet/resources/models"
   ignore_parent_path: True
   batch_size: 64
 
@@ -49,7 +49,7 @@ databases_options:
 
 
 model_ids:
-  - DLBD_v2
+  - BioSoundNet
 
 databases:
   - name: full_summer_final

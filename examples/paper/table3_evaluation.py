@@ -14,9 +14,9 @@ EVALUATORS.register_evaluator(PhenologyEvaluator)
 
 # %%
 
-models_dir = "/mnt/win/UMoncton/Doctorat/dev/BioSoundNet/resources/models"
+models_dir = "resources/models"
 
-evaluation_config_path = "config/evaluation_config.yaml"
+evaluation_config_path = "examples/paper/config/table3_evaluation_config.yaml"
 
 evaluation_config = file_utils.load_config(evaluation_config_path)
 

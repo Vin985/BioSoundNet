@@ -1,13 +1,13 @@
 
-data_config: "config/evaluation_data_config.yaml"
+data_config: "examples/paper/config/evaluation_data_config.yaml"
 save_results: True #True
 
 
 ###########
 ## Paths ##
 ###########
-predictions_dir: "results/predictions"
-evaluation_dir: "results/evaluation"
+predictions_dir: "examples/paper/results/predictions"
+evaluation_dir: "examples/paper/results/evaluation"
 models_options:
   spectrogram_overlap: 0.75
   smooth_predictions: True
@@ -59,7 +59,6 @@ evaluators:
   #   activity_threshold: 0.75
   - type: "direct"
     # method: "direct"
-      # method: "direct"
     activity_threshold: 0.75
     # activity_threshold: [0.6, 0.7, 0.75, 0.8]
     # scenarios: 
@@ -87,10 +86,10 @@ evaluators:
       
 
 
-models_list_dir:  "/mnt/win/UMoncton/Doctorat/dev/phenol1/resources/models"
+models_list_dir:  "/mnt/win/UMoncton/Doctorat/dev/BioSoundNet/resources/models"
 
 models_list_options:
-  model_dir:  "/mnt/win/UMoncton/Doctorat/dev/phenol1/resources/models"
+  model_dir:  "/mnt/win/UMoncton/Doctorat/dev/BioSoundNet/resources/models"
   ignore_parent_path: True
   batch_size: 64
 
